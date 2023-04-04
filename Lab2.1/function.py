@@ -44,3 +44,44 @@ def average_length_of_sentences(str_):
         return 0
 
 
+def average_word_length(str_):
+    numbers_re = re.findall(NUMBER, str_)
+    words_re = re.findall(WORD, str_)
+    words = []
+
+    for i in words_re:
+        if i not in numbers_re:
+            words.append(i)
+
+    sentences_len_in_characters = 0
+
+    for i in words:
+        sentences_len_in_characters += len(i)
+
+    words_len = len(words)
+
+    if words_len != 0:
+        result = sentences_len_in_characters / words_len
+        return round(result, 2)
+    else:
+        return 0
+
+
+def max_val(x):
+    return x[1]
+
+
+def top_k_repeated_n_grams(str_, k=10, n=4):
+    str_ = str_.lower()
+    words_re = re.findall(WORD, str_)
+    dict_ = {}
+
+    for i in range(len(words_re) - n + 1):
+        n_grams = ' '.join([str(j) for j in words_re[i:i + n]])
+        if n_grams not in dict_:
+            dict_[n_grams] = 1
+        else:
+            dict_[n_grams] += 1
+
+    return sorted(dict_.items(), key=max_val, reverse=True)[0:k]
+

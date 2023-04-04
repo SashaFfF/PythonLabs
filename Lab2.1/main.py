@@ -1,16 +1,19 @@
-# This is a sample Python script.
+from function import amount_of_sentences, \
+    amount_of_non_declarative_sentences, \
+    average_length_of_sentences, \
+    average_word_length, \
+    top_k_repeated_n_grams
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+str_ = input("Enter text: ")
 
+script1 = amount_of_sentences(str_)
+script2 = amount_of_non_declarative_sentences(str_)
+script3 = average_length_of_sentences(str_)
+script4 = average_word_length(str_)
+script5 = top_k_repeated_n_grams(str_)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+print("Amount of sentences: ", script1,
+      "\nAmount od non-declarative sentences: ", script2,
+      "\nAverage length of the sentences in characters: ", script3,
+      "\nAverage length of the world in the text in characters: ", script4,
+      "\nTop-K repeated N-grams in the text (K=10, N=4): ", script5)
