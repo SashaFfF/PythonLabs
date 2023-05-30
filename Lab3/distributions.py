@@ -67,7 +67,61 @@ class Serializer:
         res["__members__"] = fields
         return res
 
+    def serialize_type_class(self, obj):
 
+        res = {}
+        bases = []
+
+        for base in obj.__bases__:
+            if base != object:
+                bases.append(self.serialize(base))
+
+        res["__name__"] = self.serialize(obj.__name__)
+        res["__bases__"] = \
+            {
+            "type": "tuple",
+            "value": bases
+            }
+        # __dict__ - содержит все атрибуты, определенные для объекта
+
+        for key in obj.__dict__:
+            value = obj.__dict__[key]
+
+            if key in OBJECT_ATTRIBUTES or type(value) in (types.WrapperDescriptorType, types.MemberDescriptorType, types.BuiltinFunctionType,
+                                                           types.GetSetDescriptorType, types.MappingProxyType):
+                continue
+
+            elif isinstance(value, (staticmethod, classmethod)):
+
+                if isinstance(value, staticmethod):
+                    value_type = "staticmethod"
+
+                else:
+                    value_type = "classmethod"
+
+                res[key] = \
+                    {
+                        "type": value_type,
+                        "value": {
+                            "type": "function",
+                            "value": self.serialize_type_function(value.__func__, obj)
+                        }
+                    }
+
+            elif inspect.ismethod(value):
+                res[key] = self.serialize_type_function(value.__func__, obj)
+
+            elif inspect.isfunction(value):
+                res[key] = \
+                    {
+                        "type": "function",
+                        "value": self.serialize_type_function(value, obj)
+                    }
+
+            else:
+                res[key] = self.serialize(value)
+
+        return res
 
     def serialize(self, obj):
 
@@ -113,7 +167,19 @@ class Serializer:
 
             res["value"] = args
 
+        elif inspect.isclass(obj):
+            res["type"] = "class"
+            res["value"] = self.serialize_type_class(obj)
 
+        elif not obj:
+            res["type"] = "NoneType"
+            res["value"] = "Null"
+
+        else:
+            res["type"] = "object"
+            res["value"] = self.serialize_type_object(obj)
+
+        return res
 
 
 class Deserializer:
