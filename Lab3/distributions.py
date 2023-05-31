@@ -218,6 +218,29 @@ class Deserializer:
         elif type_obj == "bytes":
             return bytes(self.deserialize(elem) for elem in obj)
 
+    def deserialize_type_function(self, obj):
+
+        globals = obj["__globals__"]
+        closures = obj["__closure__"]
+        code = obj["__code__"]
+
+        obj_globals = {}
+
+        for key in globals:
+
+            if "module" in key:
+                obj_globals[globals[key]["value"]] = __import__(globals[key]["value"])
+
+            elif globals[key] != obj["__name__"]:
+                obj_globals[key] = self.deserialize(globals[key])
+
+        closures = tuple(self.deserialize(closures))
+        code = types.CodeType(*tuple(self.deserialize(code[attribute] for attribute in CODE_ATTRIBUTES))) # *tuple() - ?
+        res = types.FunctionType(code=code, globals=obj_globals, closure=closures)
+        res.__globals__.update({res.__name__: res})
+
+        return res
+
     def deserialize(self, obj):
 
         if obj["type"] in BASE_TYPES:
