@@ -241,6 +241,39 @@ class Deserializer:
 
         return res
 
+    def deserialize_type_class(self, obj):
+
+        bases = self.deserialize(obj["__bases__"])
+        items = {}
+
+        for item, value in obj.items():
+            items[item] = self.deserialize(value)
+
+        res = type(self.deserialize(obj["__name__"]), bases, items)
+
+        for item in items.values():
+
+            if inspect.isfunction(item):
+                item.__globals__.update({res.__name__: res})
+
+            elif isinstance(item, (staticmethod, classmethod)):
+                item.__func__.__globals__.update({res.__name__: res})
+
+        return res
+
+    def deserialize_type_object(self, obj):
+
+        cls = self.deserialize(obj["__class__"])
+        items = {}
+
+        for (key, value) in obj["__members__"].items():
+            items[key] = self.deserialize(value)
+
+        res = object.__new__(cls)
+        res.__dict__ = items
+
+        return res
+
     def deserialize(self, obj):
 
         if obj["type"] in BASE_TYPES:
@@ -250,8 +283,29 @@ class Deserializer:
             return self.deserialize_base_collection(obj["type"], obj["value"])
 
         elif obj["type"] == "dict":
-            return self.deserialize_base_collection("list", obj["value"])
+            return dict(self.deserialize_base_collection("list", obj["value"]))
 
         elif obj["type"] == "cell":
             return types.CellType(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "function":
+            return self.deserialize_type_function(obj["value"])
+
+        elif obj["type"] == "object":
+            return self.deserialize_type_object(obj["value"])
+
+        elif obj["type"] == "staticmethod":
+            return staticmethod(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "classmethod":
+            return classmethod(self.deserialize(obj["value"]))
+
+
         
+    # call у кого вызывается метод (у родителя), у объекта
+    # на уровне модуля
+    # память в питоне
+    # сборщик мусора
+    # добавить лямбду и рекурсию
+    # написать декоратор \/
+    # есть функция, кторая возвращает инт или что-то еще; если инт, то возвращаем из декоратора +3 к результату, если не инт - то результат
