@@ -7,30 +7,79 @@ from constants import CODE_ATTRIBUTES, OBJECT_ATTRIBUTES, BASE_TYPES, BASE_COLLE
 
 class Serializer:
 
+    def serialize(self, obj):
+
+        res = {}
+
+        if isinstance(obj, (str, float, int, bool)):
+            res["type"] = self.get_type_of_obj(obj)
+            res["value"] = obj
+
+        elif isinstance(obj, (tuple, list, set, frozenset, bytearray, bytes)):
+            res["type"] = self.get_type_of_obj(obj)
+            ser_object = []
+
+            for value in obj:
+                ser_object.append(self.serialize(value))
+
+            res["value"] = ser_object
+
+        elif isinstance(obj, dict):
+            res["type"] = "dict"
+            ser_object = []
+
+            for value in obj.items():
+                ser_object.append(self.serialize(value))
+
+            res["value"] = ser_object
+
+        elif isinstance(obj, types.CellType):
+            res["type"] = "cell"
+            res["value"] = self.serialize(obj.cell_contents)
+
+        elif inspect.isfunction(obj):
+            res["type"] = "function"
+            res["value"] = self.serialize_type_function(obj)
+
+        elif inspect.isclass(obj):
+            res["type"] = "class"
+            res["value"] = self.serialize_type_class(obj)
+
+        elif inspect.iscode(obj):
+            res["type"] = "code"
+            args = dict()
+
+            for (key, value) in inspect.getmembers(obj):
+                if key in CODE_ATTRIBUTES:
+                    args[key] = self.serialize(value)
+
+            res["value"] = args
+
+        elif not obj:
+            res["type"] = "NoneType"
+            res["value"] = "Null"
+
+        else:
+            res["type"] = "object"
+            res["value"] = self.serialize_type_object(obj)
+
+        return res
+
     def get_type_of_obj(self, obj):
         return re.search(r"\'(\w+)\'", str(type(obj)))[1]
 
-    def get_globals(self, obj, class_object=None):
+    def serialize_type_object(self, obj):
 
         res = {}
-        globals = obj.__globals__
+        res["__class__"] = self.serialize(obj.__class__)
 
-        for value in obj.__code__.co_names:  # co_names - кортеж имён локальных переменных
+        fields = {}
 
-            if value in globals:
+        for (key, value) in inspect.getmembers(obj):
+            if not inspect.isfunction(value) and not inspect.ismethod(value) and not key.startswith("__"):
+                fields[key] = self.serialize(value)
 
-                if inspect.isclass(globals[value]):
-                    if (class_object and obj.__globals__[value != class_object]) or not class_object:
-                        res[value] = self.serialize(globals[value])
-
-                elif isinstance(globals[value], types.ModuleType):
-                    res["module" + value] = self.serialize(globals[value].__name__)
-
-                elif value != obj.__code__.co_name:  # co_name - имя, с которым этот объект кода был определён
-                    res[value] = self.serialize(globals[value])
-
-                else:
-                    res[value] = self.serialize(obj.__name__)
+        res["__members__"] = fields
 
         return res
 
@@ -38,6 +87,7 @@ class Serializer:
 
         res = {}
         arguments = {}
+
         res["__name__"] = obj.__name__
         res["__globals__"] = self.get_globals(obj, class_object)
 
@@ -52,19 +102,31 @@ class Serializer:
                 arguments[key] = self.serialize(value)
 
         res["__code__"] = arguments
+
         return res
 
-    def serialize_type_object(self, obj):
+    def get_globals(self, obj, class_object = None):
 
         res = {}
-        res["__class__"] = self.serialize(obj.__class__)  # __class__ - класс, которому принадлежит объект
+        globals = obj.__globals__
 
-        fields = {}
-        for (key, value) in inspect.getmembers(obj):
-            if not inspect.isfunction(value) and not inspect.ismethod(value) and not key.startswith("__"):
-                fields[key] = self.serialize(value)
+        for value in obj.__code__.co_names:
 
-        res["__members__"] = fields
+            if value in globals:
+
+                if inspect.isclass(globals[value]):
+                    if (class_object and obj.__globals__[value] != class_object) or not class_object:
+                        res[value] = self.serialize(globals[value])
+
+                elif isinstance(globals[value], types.ModuleType):
+                    res["module" + value] = self.serialize(globals[value].__name__)
+
+                elif value != obj.__code__.co_name:
+                    res[value] = self.serialize(globals[value])
+
+                else:
+                    res[value] = self.serialize(obj.__name__)
+
         return res
 
     def serialize_type_class(self, obj):
@@ -79,15 +141,15 @@ class Serializer:
         res["__name__"] = self.serialize(obj.__name__)
         res["__bases__"] = \
             {
-            "type": "tuple",
-            "value": bases
+                "type": "tuple",
+                "value": bases
             }
-        # __dict__ - содержит все атрибуты, определенные для объекта
 
         for key in obj.__dict__:
+
             value = obj.__dict__[key]
 
-            if key in OBJECT_ATTRIBUTES or type(value) in (types.WrapperDescriptorType, types.MemberDescriptorType, types.BuiltinFunctionType,
+            if key in OBJECT_ATTRIBUTES or type(value) in (types.WrapperDescriptorType, types.MethodDescriptorType, types.BuiltinFunctionType,
                                                            types.GetSetDescriptorType, types.MappingProxyType):
                 continue
 
@@ -95,7 +157,6 @@ class Serializer:
 
                 if isinstance(value, staticmethod):
                     value_type = "staticmethod"
-
                 else:
                     value_type = "classmethod"
 
@@ -123,68 +184,46 @@ class Serializer:
 
         return res
 
-    def serialize(self, obj):
-
-        res = {}
-
-        if isinstance(obj, (int, float, bool, str)):
-            res["type"] = self.get_type_of_obj(obj)
-            res["value"] = obj
-
-        elif isinstance(obj, (list, tuple, set, frozenset, bytearray, bytes)):
-            res["type"] = self.get_type_of_obj(obj)
-            ser_object = []
-
-            for value in obj:
-                ser_object.append(self.serialize(value))
-
-            res["value"] = ser_object
-
-        elif isinstance(obj, dict):
-            res["type"] = "dict"
-            ser_object = []
-
-            for value in obj.items():
-                ser_object.append(self.serialize(value))
-
-            res["value"] = ser_object
-
-        elif isinstance(obj, types.CellType):
-            res["type"] = "cell"
-            res["value"] = self.serialize(obj.cell_contents)
-
-        elif inspect.isfunction(obj):
-            res["type"] = "function"
-            res["value"] = self.serialize_type_function(obj)
-
-        elif inspect.iscode(obj):
-            res["type"] = "code"
-            args = dict()
-
-            for (key, value) in inspect.getmembers(obj):
-                if key in CODE_ATTRIBUTES:
-                    args[key] = self.serialize(value)
-
-            res["value"] = args
-
-        elif inspect.isclass(obj):
-            res["type"] = "class"
-            res["value"] = self.serialize_type_class(obj)
-
-        elif not obj:
-            res["type"] = "NoneType"
-            res["value"] = "Null"
-
-        else:
-            res["type"] = "object"
-            res["value"] = self.serialize_type_object(obj)
-
-        return res
-
 
 class Deserializer:
 
-    def deserialize_base_types(self, type_obj, obj):
+    def deserialize(self, obj):
+
+        if obj["type"] in BASE_TYPES:
+            return self.deserialize_basic_types(obj["type"], obj["value"])
+
+        elif obj["type"] in BASE_COLLECTIONS:
+            return self.deserialize_basic_collections(obj["type"], obj["value"])
+
+        elif obj["type"] == "dict":
+            return dict(self.deserialize_basic_collections("list", obj["value"]))
+
+        elif obj["type"] == "cell":
+            return types.CellType(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "function":
+            return self.deserialize_type_function(obj["value"])
+
+        elif obj["type"] == "class":
+            return self.deserialize_type_class(obj["value"])
+
+        elif obj["type"] == "staticmethod":
+            return staticmethod(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "classmethod":
+            return classmethod(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "object":
+            return self.deserialize_type_object(obj["value"])
+
+        elif obj["type"] == "cell":
+            return types.CellType(self.deserialize(obj["value"]))
+
+        elif obj["type"] == "code":
+            code = obj["value"]
+            return types.CodeType(*tuple(self.deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES))
+
+    def deserialize_basic_types(self, type_obj, obj):
 
         if type_obj == "int":
             return int(obj)
@@ -198,18 +237,18 @@ class Deserializer:
         elif type_obj == "str":
             return str(obj)
 
-    def deserialize_base_collection(self, type_obj, obj):
+    def deserialize_basic_collections(self, type_obj, obj):
 
-        if type_obj == "list":
-            return list(self.deserialize(elem) for elem in obj)
-
-        elif type_obj == "tuple":
+        if type_obj == "tuple":
             return tuple(self.deserialize(elem) for elem in obj)
+
+        elif type_obj == "list":
+            return list(self.deserialize(elem) for elem in obj)
 
         elif type_obj == "set":
             return set(self.deserialize(elem) for elem in obj)
 
-        elif type_obj == "frozenset":
+        elif type_obj == "frosenset":
             return frozenset(self.deserialize(elem) for elem in obj)
 
         elif type_obj == "bytearray":
@@ -221,6 +260,7 @@ class Deserializer:
     def deserialize_type_function(self, obj):
 
         globals = obj["__globals__"]
+
         closures = obj["__closure__"]
         code = obj["__code__"]
 
@@ -235,7 +275,9 @@ class Deserializer:
                 obj_globals[key] = self.deserialize(globals[key])
 
         closures = tuple(self.deserialize(closures))
-        code = types.CodeType(*tuple(self.deserialize(code[attribute] for attribute in CODE_ATTRIBUTES))) # *tuple() - ?
+
+        code = types.CodeType(*tuple(self.deserialize(code[attribute]) for attribute in CODE_ATTRIBUTES))
+
         res = types.FunctionType(code=code, globals=obj_globals, closure=closures)
         res.__globals__.update({res.__name__: res})
 
@@ -273,39 +315,3 @@ class Deserializer:
         res.__dict__ = items
 
         return res
-
-    def deserialize(self, obj):
-
-        if obj["type"] in BASE_TYPES:
-            return self.deserialize_base_types(obj["type"], obj["value"])
-
-        elif obj["type"] in BASE_COLLECTIONS:
-            return self.deserialize_base_collection(obj["type"], obj["value"])
-
-        elif obj["type"] == "dict":
-            return dict(self.deserialize_base_collection("list", obj["value"]))
-
-        elif obj["type"] == "cell":
-            return types.CellType(self.deserialize(obj["value"]))
-
-        elif obj["type"] == "function":
-            return self.deserialize_type_function(obj["value"])
-
-        elif obj["type"] == "object":
-            return self.deserialize_type_object(obj["value"])
-
-        elif obj["type"] == "staticmethod":
-            return staticmethod(self.deserialize(obj["value"]))
-
-        elif obj["type"] == "classmethod":
-            return classmethod(self.deserialize(obj["value"]))
-
-
-        
-    # call у кого вызывается метод (у родителя), у объекта
-    # на уровне модуля
-    # память в питоне
-    # сборщик мусора
-    # добавить лямбду и рекурсию
-    # написать декоратор \/
-    # есть функция, кторая возвращает инт или что-то еще; если инт, то возвращаем из декоратора +3 к результату, если не инт - то результат
