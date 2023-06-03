@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f18813db-5b9b-411a-afab-41b873ce8f65" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/SerializerFactory.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data_for_tests.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/json_serializer.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/xml_serializer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/distributions.py" beforeDir="false" afterPath="$PROJECT_DIR$/distributions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="f18813db-5b9b-411a-afab-41b873ce8f65" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
