@@ -96,7 +96,7 @@ class Deal(models.Model):
     owner = models.ForeignKey(Owner, on_delete=models.CASCADE)
     buyer = models.ForeignKey(Client, on_delete=models.CASCADE)
     agent = models.ForeignKey(Employee, on_delete=models.CASCADE)
-    date = models.DateField()
+    date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Сделка'
