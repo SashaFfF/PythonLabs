@@ -1,0 +1,21 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+Главная страница
+{% endblock %}
+
+{% block content %}
+    <h1>главная страница</h1>
+
+    <form action="/admin" target="_blank">
+        <button>Вход для админа</button>
+    </form>
+    <form action="/admin" target="_blank">
+        <button>Вход c регистрацией</button>
+    </form>
+    <form action="{% url 'property_list' %}" target="_blank">
+        <button>Вход без регистрации</button>
+    </form>
+{% endblock %}
+
+

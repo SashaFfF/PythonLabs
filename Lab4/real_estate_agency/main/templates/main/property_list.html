@@ -1,0 +1,22 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block content %}
+<h1>{{title}}</h1>
+<ul>
+    {% for r in real_estate %}
+        <li>
+            <h2>{{ r.title }}</h2>
+            <p class="first">Тип услуги: {{r.service_type}}</p>
+
+            <p>{{r.description|linebreaks|truncatewords:50}}</p>
+            <p class="link-read-post"><a href="{% url 'post' r.pk %}">Подробнее</a></p>
+            <hr>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'main/base.html' %}
+
+{% block content %}
+<h1>{{post.title}}</h1>
+<h2>{{ property.title }}</h2>
+    <p class="first">Тип услуги: {{property.service_type}}</p>
+    <h3>Описание:</h3>
+    <p>{{property.description|linebreaks}}</p>
+    <h3>Характеристики:</h3>
+        <p>Площадь: {{property.area}} кв.м.</p>
+        <p>Стоимость: {{property.price}} BYN</p>
+{% endblock %}
