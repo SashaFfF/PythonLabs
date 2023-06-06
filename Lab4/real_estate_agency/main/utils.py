@@ -1,6 +1,6 @@
 from .models import *
 
-menu = [{'title': 'Войти', 'url_name': 'home'},
+menu = [{'title': 'Войти', 'url_name': 'login'},
         {'title': 'Добавить', 'url_name': 'add_page'}]
 
 
