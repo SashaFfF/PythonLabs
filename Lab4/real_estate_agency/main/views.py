@@ -2,6 +2,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, CreateView
 from .models import *
 from .utils import *
@@ -10,7 +11,9 @@ from .forms import *
 from django.contrib.auth.views import LoginView
 
 menu = [{'title': 'Войти', 'url_name': 'login'},
-        {'title': 'Добавить', 'url_name': 'add_page'}]
+        {'title': 'Добавить', 'url_name': 'add_page'},
+        {'title': 'Клиенты', 'url_name': 'clients'},
+        {'title': 'Сделки', 'url_name': 'deals'}]
 
 
 class MainHome(DataMixin, ListView):
@@ -44,7 +47,7 @@ class PropertyCategory(DataMixin, ListView):
         c_def = self.get_user_context(title='Список недвижимости определенной категории',
                                       cat_selected=context['real_estate'][0].type_id)
 
-        dict(list(context.items())+list(c_def.items()))
+        return dict(list(context.items())+list(c_def.items()))
 
     def get_queryset(self):
         return RealEstate.objects.filter(type__id=self.kwargs['cat_id'], purchased=False)
@@ -67,8 +70,38 @@ class AddPage(LoginRequiredMixin, DataMixin, CreateView):
     template_name = 'main/addpage.html'
     def get_context_data(self,*, object_list=None, **kwargs):
         context= super().get_context_data(**kwargs)
-        c_def = self.get_user_context(title = 'Заключение сделки')
+        c_def = self.get_user_context(title= 'Заключение сделки')
         return dict(list(context.items())+list(c_def.items()))
+
+
+# class ClientsPage(LoginRequiredMixin, DataMixin, CreateView):
+#     form_class = AddDealForm
+#     template_name = 'main/index.html'
+#     def get_context_data(self,*, object_list=None, **kwargs):
+#         context= super().get_context_data(**kwargs)
+#         c_def = self.get_user_context(title='Клиенты')
+#         return dict(list(context.items())+list(c_def.items()))
+def clients(request):
+    cl = Client.objects.all()
+
+    context = {
+        'title': 'Список клиентов',
+        'menu': menu,
+        'clients': cl,
+        'cat_selected': 0,
+    }
+    return render(request, 'main/clients.html', context=context)
+
+def deals(request):
+    deals = Deal.objects.all()
+
+    context = {
+        'title': 'Список сделок',
+        'menu': menu,
+        'deals': deals,
+        'cat_selected': 0,
+    }
+    return render(request, 'main/deals.html', context=context)
 
 # class AddPage(DataMixin, ListView):
 #     model = RealEstate
@@ -87,15 +120,17 @@ class LoginUser(DataMixin, LoginView):
     form_class = LoginUserForm
     template_name ='main/login.html'
 
-    def get_context_data(self,*, object_list=None, **kwargs):
+    def get_context_data(self, *, object_list=None, **kwargs):
         context = super().get_context_data(**kwargs)
         c_def = self.get_user_context(title='Авторизация')
         return dict(list(context.items()) + list(c_def.items()))
 
+    def get_success_url(self):
+        return reverse_lazy('property_list')
 
 def logout_user(request):
     logout(request)
-    return redirect('login')
+    return redirect('property_list')
 
 
 def show_post(request, post_id):

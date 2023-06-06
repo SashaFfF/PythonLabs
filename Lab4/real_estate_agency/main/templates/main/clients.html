@@ -1,0 +1,18 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block content %}
+<h1>{{title}}</h1>
+<ul>
+    {% for c in clients %}
+        <li>
+            <h4>{{c.first_name}} {{c.last_name}}</h4>
+            <hr>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block content %}
+<h1>{{title}}</h1>
+<ul>
+    {% for d in deals %}
+        <li>
+            <h4>Владелец недвижимости: {{d.owner.first_name}} {{d.owner.last_name}}</h4>
+            <h4>Покупатель недвижимости: {{d.buyer.first_name}} {{d.buyer.last_name}}</h4>
+            <h4>Сотрудник: {{d.agent.first_name}} {{d.agent.last_name}}</h4>
+            <h4>Недвижимость: {{d.real_estate.title}}</h4>
+            <h4>Дата: {{d.date}}</h4>
+            <hr>
+        </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}
